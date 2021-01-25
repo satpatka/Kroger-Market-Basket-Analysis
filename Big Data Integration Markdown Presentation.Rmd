@@ -1,0 +1,589 @@
+
+---
+title: 
+output: 
+  html_document:
+    code_folding: hide
+    theme: yeti
+runtime: shiny
+
+---
+## **Big Data Integration Final** {.tabset .tabset-fade .tabset-pills}
+**Authors: Keya Satpathy**
+
+### Initial Questions for the Project
+#### **Initial Questions for Our Evaluation**
+The following are the intital questions I thought I could answer with our data sources: 
+
+* Should I continue to do business with our five worst performing brands based on the perspective of customers?
+* Does location of the product within the store and ad impact sales of the product? What is the optimal location within the store and ads?
+* What amounts of each product should I plan to have in inventory on average daily based on these sales?  
+
+I thought the first question would be insightful to the business, because a company should know what customers think of the brands they partner with. A company likely wouldn't want to work with a brand that has a bad image to its customers, because they likely wouldn't sell many of the products associated with that brand. In addition, I considered the second question to be a great question to ansIr, because I thought this could help Kroger's marketing strategy. The marketing strategy would be improved with this knowledge, because the marketers would have more knowledge of the optimal locations for high product sales in the weekly ad and stores. The final question would be great for a business to know, because this knowledge would help improve a company's inventory strategy. This strategy would improve, because you possibly could improve your inventory prediction levels for each store from using the data instead of just guessing. 
+
+### Tools Used
+
+Tools that I used were basically R packages which include resuable R functions. They come in really handy for complex data analysis as ours.
+
+The packages that I used are: \
+1. **readr** - to read files into R \
+2. **dplyr** - for data wrangling and manipulation \
+3. **tidyr** - for data cleaning \
+4. **shiny** - for creating interactive reports \
+5. **DT** - to include DataTables \
+6. **ggplot2** - for fancy visualizations \
+7. **plotly** - for interactive plots and graphs \
+
+```{r eval = FALSE}
+#Packages that needed to be installed for the project#
+install.packages("readr")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("shiny")
+install.packages("DT")
+install.packages("ggplot2")
+install.packages("plotly")
+```
+
+```{r results = "hide", warning = FALSE, message = FALSE}
+#Packages that need to be found for the project#
+library(readr)
+library(dplyr)
+library(tidyr)
+library(shiny)
+library(DT)
+library(ggplot2)
+library(plotly)
+```
+
+### Data Sources
+#### **84.51 Data Source**
+The data that I wanted to evaluate for this project came from two sources. The first source was from [84.51's Ibsite](https://www.8451.com/). The folder of data that I used from 84.51 are called the Carbo Loading datasets. There are a total of four datasets within this folder. The four datasets are called the casual_lookup, product_lookup, store_lookup, and transactions. According to the Carbo Loading guide provided, these datasets came from a relational database. Also, these datasets contain purchases at a household level over two years, and the datasets are filtered to only contain products from four categories. These four categories are pasta, pasta sauce, syrup, and pancake mix. In addition, the guide contained information pertaining to the variables within each of the datasets. The tables below show these variables and their description. 
+
+**Transactions Dataset Table**
+
+Variable | Description 
+---------|------------
+upc | It is a standard 10 digit code assigned to products. This is the product that was purchased.
+dollar_sales | The amount of money spent on this product by the customer. These are recorded in dollars.
+units | The quantity of this product purchased. 
+time_of_transaction | The time the transaction occurred. This is recorded in military time. 
+geography | This label tells you where it was purchased out of the two large regions. These two regions consist of multiple states. The value can either be 1 or 2. 
+Iek | This notifies the Iek that the transaction occured. The range of values is from 1 to 104. These numbers are assigned chronologically. 
+household | This value is a unique number assigned to a household. This is the purchaser of the product.
+store | This value is a unique number assigned to each store. This is where the product was purchased.
+basket | This is a unique number assigned to a trip to the store. This is the trip that this product was assigned to. 
+day | This is the day that this product was purchased. The range of values is 1 to 728. 
+coupon | This is dummy variable to notify whether a coupon was used. The possible value is 1 or 0. 1 means a coupon was used. 0 means a coupon wasn't used. 
+
+
+**Store Lookup Dataset Table**
+
+Variable | Description 
+---------|------------
+store | This value is a unique number assigned to each store.
+store_zip_code | This is the 5 digit zip code for the store. 
+
+**Product Lookup Dataset Table**
+
+Variable | Description
+---------|------------
+upc | This is the standard 10 digit code assigned to this product. 
+product_description | This details the product. This likely contains the name of the product.
+commodity | This is the category of the product. The four possibly values are pasta, pasta sauce, pancake mix, or syrup. 
+brand | This is the brand name of the product. 
+product_size | This is the size of the product. These aren't all in the same measurement. 
+
+**Casual Lookup Dataset Table**
+
+Variable | Description
+---------|------------
+upc | This is the standard 10 digit code assigned to this product. 
+store | This value is a unique number assigned to each store.
+Iek | This notifies the Iek that the transaction occured. The range of values is from 1 to 104. These numbers are assigned chronologically. 
+feature_desc | This is where the product is located on the Iekly ad. 
+display_desc | This is where the product is displayed in the store. 
+geography | This label tells you where it was purchased out of the two large regions. These two regions consist of multiple states. The value can either be 1 or 2. 
+
+```{r eval = TRUE, results = "hide", fig.show = "hide", message = FALSE, warning = FALSE}
+#Set the working directory#
+setwd("C:/Users/bha28/Desktop/MS IS/Spring 2020/Flex 3/Big Data Integration/project/8451_Carbo-Loading/Carbo-Loading CSV")
+
+#Read the datasets into R#
+causal <- read_csv("causal_lookup.csv")
+transaction <- read_csv("transactions.csv")
+product <-read_csv("product_lookup.csv")
+store <- read_csv("store_lookup.csv")
+```
+
+```{r}
+#See a partial view of the casual_lookup dataset#
+datatable(head(causal))
+
+#See a partial view of the transactions dataset#
+datatable(head(transaction))
+
+#See a partial view of the product lookup dataset#
+datatable(head(product))
+
+#See a partial view of the store lookup dataset#
+datatable(head(store))
+```
+
+#### **Twitter Data Source**
+The final source of data I used for our projet was from [Twitter](http://apps.twitter.com). I had to create a developer account in order to get access to these tIets. In this project, I Ire hoping to pull this data manually to get customer opinions about brands. The way I pulled these tIets down manually was through using the search tIets package in R, and I searched through twitter to find these tIets by searching on the brand name and the food category of the brand. Next, I cleaned these results by focusing just on the tIet, removing emojis, removing urls, loIring the case of the tIets, removing the punctation, removing the numbers, removing stop words, removing white space, and removing additional words that I don't want to evaluate. After I cleaned the tIets, I separated the tIets into words, counted these words, and filtered on the top 25 words. After collecting these results, I created a data frame from all these results. If a brand and category didn't show a result, I put NA for these word results. Below is a table of the dataset I created manually, and this table shows the variables and description. 
+
+**Twitter Dataset Table**
+
+Variable | Description 
+---------|------------
+brand | This is the name of the brand. 
+word | These are the words that shoId up in the top 25 filter.
+freq | These are the counts of the word showing up in the tIets.
+
+##### **Zip Data Source**
+
+**Zip Dataset Table**
+
+Variable | Description
+---------|------------
+zip| zip code
+
+```{r eval = TRUE, results = "hide", fig.show = "hide", message = FALSE, warning = FALSE}
+#Set the working directory#
+setwd("C:/Users/bha28/Desktop/MS IS/Spring 2020/Flex 3/Big Data Integration/project/8451_Carbo-Loading/Carbo-Loading CSV")
+
+#Read the zip dataset into R#
+zip <- read_csv("zip.csv")
+```
+
+```{r}
+#See a partial view of the dataset#
+#datatable(head(zip))
+```
+
+### Data Integration Process
+```{r}
+#Clean the files before the Inner Join for Question 2#
+causal_select <- causal %>%
+  select(upc, store, Iek, feature_desc, display_desc)
+transaction_clean <- transaction %>%
+  filter(Iek > 42) %>%
+  select(upc, dollar_sales, units, Iek, store)
+
+#Inner join for Question 2#
+causal_trans <- inner_join(causal_select, transaction_clean, by = c("upc", "store", "Iek"))
+datatable(head(causal_trans))
+```
+
+```{r}
+#Make some transformations of the data for Question 3#
+product_transform <- transform(product, upc = as.character(upc))
+store_transform <- transform(store, store_zip_code = as.character(store_zip_code))
+names(store_transform)[2] <- "Zip"
+zip_transform <- transform(zip, Zip = as.character(Zip))
+```
+
+```{r}
+#Select the columns needed from each of the datasets for Question 3#
+transaction_select <- transaction %>%
+  select(upc, units, Iek, store, day)
+product_select <- product_transform %>%
+  select(upc,commodity, product_description)
+store_select <- store_transform %>%
+  select(store, Zip)
+
+#Inner join on all these datasets for Question 3#
+transaction_product <- inner_join(transaction_select, product_select, by = "upc")
+head(transaction_product)  
+transaction_product_store <- inner_join(transaction_product, store_select, by = "store")
+head(transaction_product_store)
+```
+
+```{r}
+#Additional inner join for question 3 for creating the zip code map#
+#Group the data by zip code and the sum the quanity of products sold in these zip codes#
+head(transaction_product_store)
+zip_map_data_2 <- transaction_product_store %>%
+  group_by(Zip) %>%
+  summarise(Total_Quantity_Zip = sum(units, na.rm = TRUE))
+
+#Inner join on zip and transaction product store#
+transaction_product_store_zip <- inner_join(zip_map_data_2, zip_transform, by = "Zip")
+head(transaction_product_store_zip)
+```
+
+### Results 
+
+**Question : Does location of product within the store and placement or position of ad impact the sales of a product at Kroger?** \
+Let us explore. \
+
+**Ad Placement Analysis** 
+
+
+***Total Dollar Sales***
+```{r}
+#Editing of the Combined Dataset to Find the AnsIrs for Question 2#
+#Feature Description#
+causal_trans_feature_dollar <- causal_trans %>%
+  select(feature_desc, dollar_sales)%>%
+  group_by(feature_desc) %>%
+  summarise(Total_Dollar_Sales = sum(dollar_sales, na.rm = TRUE)) %>%
+  arrange(desc(Total_Dollar_Sales))
+datatable(causal_trans_feature_dollar)
+
+```
+
+Maximum sales in dollars are driven by the ads on the interior page.\
+\
+
+
+***Total Units***
+```{r}
+
+causal_trans_feature_units <- causal_trans %>%
+  select(feature_desc, units)%>%
+  group_by(feature_desc) %>%
+  summarise(Total_Units = sum(units, na.rm = TRUE)) %>%
+  arrange(desc(Total_Units))
+datatable(causal_trans_feature_units)
+```
+Most number of units sale is from interior page features.\
+\
+
+***Sales Divided by Units***
+```{r}
+causal_trans_feature_units_dollar <- causal_trans %>%
+  select(feature_desc, units, dollar_sales)%>%
+  group_by(feature_desc) %>%
+  summarise(Sales_Divided_By_Units = sum(dollar_sales, na.rm = TRUE)/sum(units, na.rm = TRUE)) %>%
+  arrange(desc(Sales_Divided_By_Units))
+datatable(causal_trans_feature_units_dollar)
+```
+
+\
+
+#### **In store placement** \
+
+***Total Dollar Sales***
+```{r}
+causal_trans_display_dollar <- causal_trans %>%
+  select(display_desc, dollar_sales)%>%
+  group_by(display_desc) %>%
+  summarise(Total_Dollar_Sales = sum(dollar_sales, na.rm = TRUE)) %>%
+  arrange(desc(Total_Dollar_Sales))
+datatable(causal_trans_display_dollar)
+```
+\
+
+***Total Units***
+```{r}
+causal_trans_display_units <- causal_trans %>%
+  select(display_desc, units)%>%
+  group_by(display_desc) %>%
+  summarise(Total_Units = sum(units, na.rm = TRUE)) %>%
+  arrange(desc(Total_Units))
+datatable(causal_trans_display_units)
+```
+
+\
+
+***Sales Divided by Units***
+```{r}
+causal_trans_display_units_dollar <- causal_trans %>%
+  select(display_desc, units, dollar_sales)%>%
+  group_by(display_desc) %>%
+  summarise(Sales_Divided_By_Units = sum(dollar_sales, na.rm = TRUE)/sum(units, na.rm = TRUE)) %>%
+  arrange(desc(Sales_Divided_By_Units))
+datatable(causal_trans_display_units_dollar)
+```
+\
+\
+\
+
+
+**Question : What amounts of each product should I plan to have in inventory on average daily based on these sales?**
+Inventory management means the right stock, at the right levels, in the right place, at the right time, and at the right cost. Managing inventory in retail is extremely important in order to optimize our profits. Also, with so many competitors out there, it is highly likely that I lose our customer if any particlar product is out of stock. So in order to retain our customers, I need to maintain the inventory such that all the products are available in the store as per the demand.
+
+```{r}
+#Code to get AnsIrs for Question 3#
+#Part 1#
+#Group the data by day and product description and create a calculation to sum the units by day#
+combine_day_sum <- transaction_product_store %>%
+  group_by(day, product_description) %>%
+  summarise(Sum_Quantity_by_Day = sum(units, na.rm = TRUE))
+
+#Shiny table for presentation to allow a user to see how much quanity of a product was bought each day#
+shinyApp(
+  ui = fluidPage(selectInput("day", "Select the day you want to evaluate:", 
+                             choices = sort(unique(combine_day_sum$day)), multiple = TRUE),
+                 selectInput("product_description", "Select the product you want to evaluate:",
+                             choices = sort(unique(combine_day_sum$product_description)), multiple = TRUE), 
+                 DT::dataTableOutput('tbl')), 
+                 server = function(input, output) {selected_data_tab <- reactive({
+                   req(input$day)
+                   req(input$product_description)
+                   combine_day_sum %>%
+                     dplyr::filter(day %in% input$day & product_description %in% input$product_description)})
+                 output$tbl = DT::renderDataTable(
+                   selected_data_tab(), options = list(lengthChange = FALSE), 
+                                                  caption = 
+                     "This table shows the quantity of each product by day that could possibly be planned for inventory.")},
+                 options = list(height = 400))
+```
+\
+
+Below table indicates the total quantity of products sold EACH day, all stores combined.
+
+```{r}
+#Part 2#
+#Group the data by day, sum the units of the day, and arrange it by day#
+combine_day_time <- transaction_product_store %>%
+  group_by(day) %>%
+  summarise(Total_Quantity_Day = sum(units, na.rm = TRUE)) %>%
+  arrange(day)
+#Preview the dataset#
+datatable(head(combine_day_time))
+```
+
+\
+
+***Days when Kroger had maximum products sold***
+
+```{r}
+#Find the top 5 days when products Ire sold#
+top_5_days <- combine_day_time %>%
+  arrange(desc(Total_Quantity_Day)) %>%
+  head(5)
+datatable(top_5_days)
+```
+\
+
+A quick overview of the quantity sold each day over time
+```{r}
+ggplot(data = combine_day_time, aes(x = day, y = Total_Quantity_Day, group=1)) +
+  geom_line() +
+  geom_point() +
+  ggtitle("Quantity Over Time", subtitle = "This shows the quantity over all the days recorded in the dataset.")
+```
+
+\
+
+**Total Units sold - Geographically (By Zip Code)**
+```{r}
+#Part 3#
+#Select the columns I need for the zip data#
+zip_map_data <- transaction_product_store_zip %>%
+  select(Zip, Latitude, Longitude, Total_Quantity_Zip) %>%
+  arrange(desc(Total_Quantity_Zip))
+#Shows the top 5 Zips for Total Quantity Sold#
+datatable(head(zip_map_data, 5))
+
+#Making the map to see where the most products are sold by zip code#
+#styling the map#
+g <- list(
+  scope = 'usa',
+  projection = list(type = 'albers usa'),
+  showland = TRUE,
+  landcolor = toRGB("gray95"),
+  subunitcolor = toRGB("gray85"),
+  countrycolor = toRGB("gray85"),
+  countrywidth = 0.5,
+  subunitwidth = 0.5
+)
+
+map <- plot_geo(zip_map_data, lat = ~Latitude, lon = ~Longitude)
+map <- map %>% add_markers(
+  text = ~paste(paste("Zip Code:", Zip), paste("Units:", Total_Quantity_Zip), sep = "<br />"),
+  color = ~Total_Quantity_Zip, symbol = I("circle"), size = I(8), hoverinfo = "text"
+)
+map <- map %>% colorbar(title = "Total Units Sold")
+map <- map %>% layout(
+  title = 'Total Units Sold by Zip<br /> (Hover over the circle to see the units sold and zip)', geo = g)
+
+map
+```
+
+### Insights 
+
+#### **Our key findings** \
+
+##### **Overall Stats**
+
+```{r}
+product$upc <- as.character(product$upc)
+
+overall <- transaction %>% summarise(total_customers = n_distinct(household),total_sales = sum(dollar_sales),total_units = sum(units),total_baskets = n_distinct(basket),
+                                     avg_basket_spend = sum(dollar_sales)/n_distinct(basket),
+                                     avg_basket_unit = sum(units)/n_distinct(basket),
+                                     avg_spend_per_customer = sum(dollar_sales)/n_distinct(household),
+                                     avg_visit_per_customer = n_distinct(basket)/n_distinct(household))
+
+data.frame(overall)
+```
+
+Looking at the overall sales numbers from the data, there are 510k customers that have shopped at Kroger in all and have spent around $9.13 Million to buy 6.2 millions units of pasta, pasta sauce, syrups and pancake mixes. Each customer on average spends about $18 at the store and make around 7 visits over the period of time. \
+\
+
+##### **Iekly Sales**
+
+```{r}
+
+Iekly_sales <- transaction %>% group_by(Iek) %>% summarise(total_dollar_sales = sum(dollar_sales))
+
+plot(Iekly_sales)
+
+```
+
+This is the Iekly sales chart for Kroger's Sales for all stores combined in these categories.
+From the plot I can see that the sales in 'Iek 79' was the highest and that for 'Iek 49'
+Ire the loIst.\
+\
+
+
+##### **Coupon Impact**
+
+Kroger also offers coupons to certain households. I tried to look at how these coupons affect the overall purchase behavior for these households.
+```{r}
+
+hshd_using_coupon <- transaction %>% group_by(household) %>% summarise(coup = max(coupon),
+                                                                       spend=sum(dollar_sales))
+
+
+
+coupon_impact <- hshd_using_coupon %>% group_by(coup) %>% summarise(total=n_distinct(household),avg_spend_coupon = mean(spend))
+
+data.frame(coupon_impact)
+```
+
+Clearly, the households which have used coupons as a part of their transactions, spend thrice as much as the other households. Here, only 8% of the total households used at least one coupons and have spent # USD 45 on average compared to only USD 15 spent by households that do not get coupons.
+
+**Recommendation**: If Kroger wants to drive loyalty from customers, it should incentivize households bu giving them coupons so that the households should start spending more and become loyal. customers.\
+\
+
+
+##### **Product level analysis**
+
+Now lets look at how good the individual products are doing in terms of dollar sales and units sold.
+
+
+Below is the list of top 10 products in terms of dollar sales and I can see that 'Private label
+Spaghetti Regular' is the most popular item.
+
+
+***Top 10 most bought product upc overall by dollar sales***
+```{r}
+most_bought_item_by_sales <- transaction %>% inner_join(product,by="upc",suffix= c("_x","_y")) %>%
+                  group_by(product_description) %>% summarise(tota_dollar_sales = sum(dollar_sales)) %>%
+                  arrange(desc(tota_dollar_sales))
+
+most_bought_item_by_sales[1:10,]
+
+```
+
+
+The below is the list of top 10 most bought items in terms of unit sold. The **Private Label** Thin Spaghetti is the most purchased item in terms of units. \
+
+***Top 10 most bought product upc overall by units purchased***
+```{r}
+most_bought_units <- transaction %>% inner_join(product,by="upc",suffix= c("_x","_y")) %>%
+                group_by(product_description) %>% summarise(total_units = sum(units)) %>%
+                arrange(desc(total_units))
+
+most_bought_units[1:10,]
+
+```
+
+
+Let's also look at the items which are not doing that great and are the loIst bought items in stores overall.
+The **'Private Label Traditional Spaghetti'** is the worst performing item by dollar sales. \
+\
+***Worst 10 most bought product upc overall by dollar sales*** 
+```{r}
+least_bought_item_by_sales <- transaction %>% inner_join(product,by="upc",suffix= c("_x","_y")) %>%
+  group_by(product_description) %>% summarise(total_dollar_sales = sum(dollar_sales)) %>%
+  arrange(total_dollar_sales) %>% filter (total_dollar_sales>0)
+
+least_bought_item_by_sales[1:10,]
+```
+
+
+##### **Brand Level Analysis**
+Now lets analyze which CPG brands are really doing Ill in terms of dollar sales overall at kroger.
+The **'Private Label'** by Kroger is the best performing brand overall folloId by **'Ragu' and 'Prego'**. \
+
+
+***Top performing brand overall by sales***
+```{r}
+top_brand_by_sales <- transaction %>% inner_join(product,by="upc",suffix= c("_x","_y")) %>%
+                group_by(brand) %>% summarise(total_dollar_sales = sum(dollar_sales)) %>%
+                arrange(desc(total_dollar_sales)) 
+
+top_brand_by_sales[1:10,]
+
+```
+
+
+***Worst performing brand overall by sales***
+Looking at the worst performing brands, **'La Russa'** is the Iakest haveing earnd only a $1.07 overallfol loId by Quinoa having only $1.94 in sales. 
+
+```{r}
+bottom_brand_by_sales <- transaction %>% inner_join(product,by="upc",suffix= c("_x","_y")) %>%
+  group_by(brand) %>% summarise(total_dollar_sales = sum(dollar_sales)) %>%
+  arrange(total_dollar_sales)
+
+bottom_brand_by_sales[1:10,]
+```
+**Recommendation:** Kroger should meet with its Iakest performing brands and should work on a strategy to make them invest more in their branding so that people get to know about these brands to increase the market share overall.\
+\
+
+##### **Commodity Level Analysis** 
+Now lets look at which commodities are the most loved by the customers. \
+
+***Top performing commodities overall by sales***
+```{r}
+top_commodities_by_sales <- transaction %>% inner_join(product,by="upc",suffix= c("_x","_y")) %>%
+              group_by(commodity) %>% summarise(total_dollar_sales = sum(dollar_sales)) %>%
+              arrange(desc(total_dollar_sales))
+data.frame(top_commodities_by_sales)
+```
+I can see that even though **'pasta'** is the most bought item in terms of units, hoIver the 'pasta sauce'has the highest dollar sales given it costs more on average than buying just 'pasta'.Out of the 4 commodities here, 'pancake mixes' are the lease favourite and are only bought at a rate of 10% compare to that of the 'pasta' in terms of units.\
+\
+
+
+***Top performing commodities overall by items purchased***
+```{r}
+top_commodities_by_units <- transaction %>% inner_join(product,by="upc",suffix= c("_x","_y")) %>%
+  group_by(commodity) %>% summarise(total_units = sum(units)) %>%
+  arrange(desc(total_units))
+data.frame(top_commodities_by_units)
+```
+
+##### **Store level Analysis** \
+
+To find the stores which have contributed the most dollar sales overall, I look at the combined sales for each store over the period of time. \
+
+***Best and Worst performing Stores (by Dollar Sales)***
+```{r}
+
+#Top performing stores by dollar sales
+store_by_sales <- transaction %>% inner_join(store,by="store",suffix= c("_x","_y")) %>%
+  group_by(store) %>% summarise(total_dollar_sales = sum(dollar_sales)) %>%
+  arrange(desc(total_dollar_sales))
+
+store_by_sales[1:10,]
+
+
+#worst performing stores by dollar sales
+bottom_store_by_sales <- transaction %>% inner_join(store,by="store",suffix= c("_x","_y")) %>%
+  group_by(store) %>% summarise(total_dollar_sales = sum(dollar_sales)) %>%
+  arrange(total_dollar_sales)
+
+bottom_store_by_sales[1:10,]
+
+```
+
+**Store 270** has been the best performing store closely folloId by store 359, in terms of overall dollar sales. Whereas store 387 was the worst performing store. \
+
+**Recommendation:** The reason for low sales can be either that this store was pretty new and did not have comparable sales over the time else kroger should compare demographics of the worst store with the best to understand what can they do to change in order to drive sales in the loIst performing stores.
+
